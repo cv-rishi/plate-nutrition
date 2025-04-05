@@ -1,39 +1,94 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import {
+	DarkTheme,
+	DefaultTheme,
+	ThemeProvider as NavigationThemeProvider,
+} from "@react-navigation/native";
+import { useFonts } from "expo-font";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
+import "react-native-reanimated";
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { AppThemeProvider, useAppTheme } from "@/context/ThemeContext";
+import { ThemeToggleButton } from "@/components/ThemeToggleButton";
+import { Colors } from "@/constants/Colors";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
+// Prevent splash screen auto-hide
 SplashScreen.preventAutoHideAsync();
 
+// Inner component that uses the theme context
+function RootNavigation() {
+	const { theme } = useAppTheme();
+	const headerBackgroundColor =
+		theme === "light"
+			? Colors.light.headerBackground
+			: Colors.dark.headerBackground;
+	const headerTintColor =
+		theme === "light" ? Colors.light.text : Colors.dark.text;
+
+	return (
+		<NavigationThemeProvider
+			value={theme === "dark" ? DarkTheme : DefaultTheme}
+		>
+			<Stack
+				screenOptions={{
+					// Apply header options globally
+					headerStyle: {
+						backgroundColor: headerBackgroundColor,
+					},
+					headerTintColor: headerTintColor,
+					headerRight: () => <ThemeToggleButton />,
+				}}
+			>
+				{/* Make the login screen show the header */}
+				<Stack.Screen name="index" options={{ title: "Login" }} />
+
+				{/* Other screens will inherit screenOptions */}
+				<Stack.Screen
+					name="adminDashboard"
+					options={{ title: "Admin Dashboard" }}
+				/>
+				<Stack.Screen name="userDashboard" options={{ title: "User Screen" }} />
+				<Stack.Screen
+					name="staffDashboard"
+					options={{ title: "Image Taker" }}
+				/>
+				<Stack.Screen
+					name="nutritionDashboard"
+					options={{ title: "Nutrition Dashboard" }}
+				/>
+
+				{/* +not-found screen */}
+				<Stack.Screen name="+not-found" />
+			</Stack>
+		</NavigationThemeProvider>
+	);
+}
+
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+	// Font loading logic remains the same
+	const [loaded, error] = useFonts({
+		SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+	});
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+	useEffect(() => {
+		if (error) throw error;
+	}, [error]);
 
-  if (!loaded) {
-    return null;
-  }
+	useEffect(() => {
+		if (loaded) {
+			SplashScreen.hideAsync();
+		}
+	}, [loaded]);
 
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
+	if (!loaded) {
+		return null;
+	}
+
+	// Wrap the entire navigation structure with your theme provider
+	return (
+		<AppThemeProvider>
+			<RootNavigation />
+		</AppThemeProvider>
+	);
 }
