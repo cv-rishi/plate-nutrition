@@ -40,10 +40,18 @@ function RootNavigation() {
 					headerRight: () => <ThemeToggleButton />,
 				}}
 			>
-				{/* Make the login screen show the header */}
-				<Stack.Screen name="index" options={{ title: "Login" }} />
-
-				{/* Other screens will inherit screenOptions */}
+				<Stack.Screen
+					name="index"
+					options={{ title: "Home", headerShown: true }}
+				/>
+				<Stack.Screen
+					name="login"
+					options={{ title: "Login", headerShown: true }}
+				/>
+                <Stack.Screen
+                    name="signup"
+                    options={{ title: "Sign Up", headerShown: true }}
+                />
 				<Stack.Screen
 					name="adminDashboard"
 					options={{ title: "Admin Dashboard" }}

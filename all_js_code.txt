@@ -112,6 +112,11 @@ export const Colors = {
 		secondary: lightSecondary,
 		link: lightLink,
 		headerBackground: lightHeaderBg,
+
+		separator: "#ccc", // Example separator color
+		inputBackground: "#f0f0f0", // Light theme input background
+		inputBorder: "#ccc", // Light theme input border
+		placeholderText: "#999", // Light theme placeholder text
 	},
 	dark: {
 		text: darkForeground,
@@ -125,81 +130,30 @@ export const Colors = {
 		secondary: darkSecondary,
 		link: darkLink,
 		headerBackground: darkHeaderBg,
+
+		inputBackground: "#2c2c2e", // Dark theme input background
+		inputBorder: "#444", // Dark theme input border
+		placeholderText: "#777", // Dark theme placeholder text
 	},
 };
 
-// ./app/index.tsx
-import React, { useState } from "react";
-import { View, TextInput, Button, StyleSheet, Alert } from "react-native";
-import { useRouter } from "expo-router";
-import { ThemedText } from "@/components/ThemedText";
+// ./app/signup.tsx
+import React from "react";
+import { StyleSheet } from "react-native";
 import { ThemedView } from "@/components/ThemedView";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { ThemedText } from "@/components/ThemedText";
+import { useRouter } from "expo-router";
+import { Button } from "react-native";
 
-export default function LoginScreen() {
-	const [username, setUsername] = useState("");
-	const [password, setPassword] = useState("");
+export default function SignUpScreen() {
 	const router = useRouter();
-
-	// Get theme colors
-	const textColor = useThemeColor({}, "text");
-	const backgroundColor = useThemeColor({}, "background");
-	const borderColor = useThemeColor({}, "icon");
-	const placeholderColor = useThemeColor({}, "icon");
-
-	const handleLogin = () => {
-		// Basic client-side check (replace with real auth later)
-		if (username === "admin" && password === "password") {
-			// Use a placeholder password
-			router.replace("/adminDashboard");
-		} else if (username === "user" && password === "password") {
-			router.replace("/userDashboard");
-		} else if (username === "mess Staff" && password === "password") {
-			router.replace("/staffDashboard");
-		} else if (username === "nutrition" && password === "password") {
-			router.replace("/nutritionDashboard");
-		} else {
-			Alert.alert("Login Failed", "Invalid username or password");
-		}
-	};
 
 	return (
 		<ThemedView style={styles.container}>
-			<ThemedText type="title">Login</ThemedText>
-			<TextInput
-				style={[
-					styles.input,
-					{
-						color: textColor,
-						backgroundColor: backgroundColor,
-						borderColor: borderColor,
-					},
-				]}
-				placeholder="Username"
-				value={username}
-				onChangeText={setUsername}
-				placeholderTextColor={placeholderColor}
-			/>
-			<TextInput
-				style={[
-					styles.input,
-					{
-						color: textColor,
-						backgroundColor: backgroundColor,
-						borderColor: borderColor,
-					},
-				]}
-				placeholder="Password"
-				value={password}
-				onChangeText={setPassword}
-				secureTextEntry
-				placeholderTextColor={placeholderColor}
-			/>
-			<Button
-				title="Login"
-				onPress={handleLogin}
-				color={useThemeColor({}, "primary")}
-			/>
+			<ThemedText type="title">Sign Up</ThemedText>
+			{/* Add your sign-up form fields here */}
+			<ThemedText>Sign Up Form Will Go Here</ThemedText>
+			<Button title="Back to Home" onPress={() => router.back()} />
 		</ThemedView>
 	);
 }
@@ -211,50 +165,877 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		padding: 20,
 	},
-	input: {
-		width: "100%",
-		marginVertical: 10,
-		padding: 15,
-		borderWidth: 1,
-		borderRadius: 5,
-	},
 });
 
-// ./app/staffDashboard.tsx
+// ./app/index.tsx
 import React from "react";
-import { View, StyleSheet, Button } from "react-native";
-import { ThemedText } from "@/components/ThemedText";
+import { StyleSheet } from "react-native";
+import { Link } from "expo-router"; // Import Link
 import { ThemedView } from "@/components/ThemedView";
-import { useRouter } from "expo-router";
+import { ThemedText } from "@/components/ThemedText";
+import { Button } from "react-native"; // Or use a custom ThemedButton if you have one
 
-const ImageTakerScreen = () => {
-	const router = useRouter();
-
+export default function HomeScreen() {
 	return (
 		<ThemedView style={styles.container}>
-			<ThemedText type="title">Image Taker</ThemedText>
-			<ThemedText style={styles.description}>
-				Welcome to the image taker interface
-			</ThemedText>
-			<Button title="Logout" onPress={() => router.push("/login")} />
+			<ThemedText type="title">Welcome!</ThemedText>
+			<ThemedText>Please log in or sign up to continue.</ThemedText>
+
+			{/* Use Link for navigation */}
+			<Link href="/login" asChild>
+				<Button title="Log In" />
+			</Link>
+
+			<Link href="/signup" asChild>
+				<Button title="Sign Up" />
+			</Link>
+
+			{/* Add some spacing if needed */}
+			<ThemedView style={{ height: 20 }} />
 		</ThemedView>
 	);
-};
+}
 
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		justifyContent: "center",
 		alignItems: "center",
-		padding: 16,
+		justifyContent: "center",
+		padding: 20,
 	},
-	description: {
-		marginVertical: 20,
-		textAlign: "center",
-	},
+	// Add other styles as needed
 });
 
-export default ImageTakerScreen;
+// ./app/staffDashboard.tsx
+import React, { useState, useEffect } from "react";
+import {
+	View,
+	StyleSheet,
+	Button,
+	Alert,
+	TouchableOpacity,
+	ScrollView,
+	Image,
+	Text,
+	Modal,
+} from "react-native";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedTextInput } from "@/components/ThemedTextInput";
+import { CameraComponent } from "@/components/CameraComponent";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { router } from "expo-router";
+
+// --- Data Structure and Fake Data ---
+interface FoodItem {
+	id: string;
+	name: string;
+	mealCategory?: "Breakfast" | "Lunch" | "Dinner" | "Snacks";
+}
+
+// Food database (available items to choose from)
+const availableFoodItems: FoodItem[] = [
+	{ id: "1", name: "Apple" },
+	{ id: "2", name: "Chicken Breast (100g)" },
+	{ id: "3", name: "Brown Rice (cooked, 1 cup)" },
+	{ id: "4", name: "Broccoli (1 cup)" },
+	{ id: "5", name: "Whole Wheat Bread" },
+	{ id: "6", name: "Scrambled Eggs" },
+	{ id: "7", name: "Greek Yogurt" },
+	{ id: "8", name: "Grilled Salmon" },
+	{ id: "9", name: "Quinoa Salad" },
+	{ id: "10", name: "Mixed Nuts" },
+	{ id: "11", name: "Banana" },
+	{ id: "12", name: "Oatmeal" },
+	{ id: "13", name: "Sweet Potato" },
+	{ id: "14", name: "Tofu" },
+	{ id: "15", name: "Avocado" },
+];
+
+type CameraMode = "buffet" | "plate" | "container" | null;
+type MealCategory = "Breakfast" | "Lunch" | "Dinner" | "Snacks";
+
+export default function StaffDashboardScreen() {
+	const [currentDate, setCurrentDate] = useState(new Date());
+	const [trackedFoodItems, setTrackedFoodItems] = useState<FoodItem[]>([]);
+	const [expandedMeals, setExpandedMeals] = useState<
+		Record<MealCategory, boolean>
+	>({
+		Breakfast: true,
+		Lunch: false,
+		Dinner: false,
+		Snacks: false,
+	});
+
+	// Food selection modal state
+	const [showFoodModal, setShowFoodModal] = useState(false);
+	const [selectedMeal, setSelectedMeal] = useState<MealCategory | null>(null);
+	const [searchTerm, setSearchTerm] = useState("");
+
+	// Camera & measurement states
+	const [showCamera, setShowCamera] = useState(false);
+	const [cameraMode, setCameraMode] = useState<CameraMode>(null);
+	const [activeFoodItem, setActiveFoodItem] = useState<FoodItem | null>(null);
+	const [weight, setWeight] = useState("");
+	const [volume, setVolume] = useState("");
+	const [density, setDensity] = useState<number | null>(null);
+
+	// Image states
+	const [imageData, setImageData] = useState<
+		Record<
+			string,
+			{
+				buffet: string[];
+				plate: string[];
+				container: string[];
+			}
+		>
+	>({});
+
+	// Theme colors
+	const backgroundColor = useThemeColor({}, "background");
+	const textColor = useThemeColor({}, "text");
+	const iconColor = useThemeColor({}, "icon");
+	const separatorColor = useThemeColor({}, "separator");
+	const headerColor = useThemeColor({}, "header");
+	const accentColor = useThemeColor({}, "primary");
+	const secondaryColor = useThemeColor({}, "secondary");
+
+	// Navigation for date
+	const goToPreviousDay = () => {
+		const newDate = new Date(currentDate);
+		newDate.setDate(currentDate.getDate() - 1);
+		setCurrentDate(newDate);
+	};
+
+	const goToNextDay = () => {
+		const newDate = new Date(currentDate);
+		newDate.setDate(currentDate.getDate() + 1);
+		setCurrentDate(newDate);
+	};
+
+	const formatDate = () => {
+		const months = [
+			"Jan",
+			"Feb",
+			"Mar",
+			"Apr",
+			"May",
+			"Jun",
+			"Jul",
+			"Aug",
+			"Sep",
+			"Oct",
+			"Nov",
+			"Dec",
+		];
+		const month = months[currentDate.getMonth()];
+		const day = currentDate.getDate();
+		return `${month} ${day}`;
+	};
+
+	const handleLogout = () => {
+		console.log("Logging out...");
+		router.replace("/");
+	};
+
+	const toggleMealExpansion = (meal: MealCategory) => {
+		setExpandedMeals((prev) => ({
+			...prev,
+			[meal]: !prev[meal],
+		}));
+	};
+
+	const openFoodItemSelection = (mealCategory: MealCategory) => {
+		setSelectedMeal(mealCategory);
+		setShowFoodModal(true);
+		setSearchTerm("");
+	};
+
+	const addFoodToMeal = (foodItem: FoodItem) => {
+		if (!selectedMeal) return;
+
+		const newItem = {
+			...foodItem,
+			id: `${foodItem.id}-${Date.now()}`, // Make unique ID
+			mealCategory: selectedMeal,
+		};
+
+		setTrackedFoodItems((prev) => [...prev, newItem]);
+		setShowFoodModal(false);
+
+		// Initialize image data structure for this item
+		setImageData((prev) => ({
+			...prev,
+			[newItem.id]: { buffet: [], plate: [], container: [] },
+		}));
+	};
+
+	const openFoodItemDetails = (item: FoodItem) => {
+		setActiveFoodItem(item);
+		// Reset measurement data
+		setWeight("");
+		setVolume("");
+		setDensity(null);
+	};
+
+	const closeFoodItemDetails = () => {
+		setActiveFoodItem(null);
+	};
+
+	const openCamera = (mode: CameraMode) => {
+		if (!activeFoodItem) {
+			Alert.alert("No Food Item Selected", "Please select a food item first.");
+			return;
+		}
+		setCameraMode(mode);
+		setShowCamera(true);
+	};
+
+	const handlePictureTaken = (uri: string | null) => {
+		setShowCamera(false);
+		if (uri && cameraMode && activeFoodItem) {
+			const itemId = activeFoodItem.id;
+			setImageData((prev) => {
+				const updatedItem = { ...prev[itemId] };
+				updatedItem[cameraMode] = [...updatedItem[cameraMode], uri];
+				return { ...prev, [itemId]: updatedItem };
+			});
+		}
+		setCameraMode(null);
+	};
+
+	const calculateDensity = () => {
+		const w = parseFloat(weight);
+		const v = parseFloat(volume);
+		if (!isNaN(w) && !isNaN(v) && v > 0) {
+			setDensity(w / v);
+			Alert.alert(
+				"Density Calculated",
+				`Density: ${(w / v).toFixed(2)} g/mL (or g/cm³)`,
+			);
+		} else if (!isNaN(w) && volume === "") {
+			Alert.alert("Weight Recorded", `Weight: ${w.toFixed(2)} g`);
+			setDensity(null);
+		} else {
+			Alert.alert(
+				"Invalid Input",
+				"Please enter valid numeric weight and optional positive volume.",
+			);
+			setDensity(null);
+		}
+	};
+
+	const renderImageThumbnails = (images: string[], title: string) => (
+		<View style={styles.thumbnailContainer}>
+			<ThemedText style={styles.subHeader}>{title}</ThemedText>
+			{images.length === 0 ? (
+				<ThemedText style={styles.noImagesText}>No images taken yet</ThemedText>
+			) : (
+				<ScrollView
+					horizontal
+					showsHorizontalScrollIndicator={false}
+					style={styles.thumbnailScroll}
+				>
+					{images.map((uri, index) => (
+						<Image key={index} source={{ uri }} style={styles.thumbnail} />
+					))}
+				</ScrollView>
+			)}
+		</View>
+	);
+
+	// Food selection modal
+	const renderFoodSelectionModal = () => {
+		const filteredItems = availableFoodItems.filter((item) =>
+			item.name.toLowerCase().includes(searchTerm.toLowerCase()),
+		);
+
+		return (
+			<Modal
+				visible={showFoodModal}
+				animationType="slide"
+				transparent={false}
+				onRequestClose={() => setShowFoodModal(false)}
+			>
+				<ThemedView style={styles.modalContainer}>
+					<View style={styles.modalHeader}>
+						<TouchableOpacity onPress={() => setShowFoodModal(false)}>
+							<MaterialIcons name="close" size={24} color={iconColor} />
+						</TouchableOpacity>
+						<ThemedText style={styles.modalTitle}>
+							Select Food Item for {selectedMeal}
+						</ThemedText>
+						<View style={{ width: 24 }} />
+					</View>
+
+					<ThemedTextInput
+						style={styles.searchInput}
+						placeholder="Search food items..."
+						value={searchTerm}
+						onChangeText={setSearchTerm}
+					/>
+
+					<ScrollView style={styles.foodItemList}>
+						{filteredItems.map((item) => (
+							<TouchableOpacity
+								key={item.id}
+								style={styles.foodItemSelection}
+								onPress={() => addFoodToMeal(item)}
+							>
+								<View style={styles.foodIcon}>
+									<MaterialIcons
+										name="restaurant"
+										size={24}
+										color={iconColor}
+									/>
+								</View>
+								<ThemedText style={styles.foodItemName}>{item.name}</ThemedText>
+								<MaterialIcons name="add" size={24} color={accentColor} />
+							</TouchableOpacity>
+						))}
+						{filteredItems.length === 0 && (
+							<ThemedText style={styles.noResultsText}>
+								No food items found
+							</ThemedText>
+						)}
+					</ScrollView>
+				</ThemedView>
+			</Modal>
+		);
+	};
+
+	// If camera is active, show only the camera component
+	if (showCamera) {
+		return <CameraComponent onPictureTaken={handlePictureTaken} />;
+	}
+
+	// Food Item Detail View
+	if (activeFoodItem) {
+		const itemImages = imageData[activeFoodItem.id] || {
+			buffet: [],
+			plate: [],
+			container: [],
+		};
+
+		return (
+			<ThemedView style={styles.container}>
+				<View style={styles.detailHeader}>
+					<TouchableOpacity onPress={closeFoodItemDetails}>
+						<MaterialIcons name="arrow-back" size={24} color={iconColor} />
+					</TouchableOpacity>
+					<ThemedText style={styles.detailTitle}>
+						{activeFoodItem.name}
+					</ThemedText>
+					<View style={{ width: 24 }} />
+				</View>
+
+				<ScrollView style={styles.detailContent}>
+					{/* Weight & Density Section */}
+					<View style={styles.section}>
+						<ThemedText style={styles.subHeader}>Weight & Density</ThemedText>
+						<ThemedTextInput
+							style={styles.input}
+							placeholder="Weight (grams)"
+							value={weight}
+							onChangeText={setWeight}
+							keyboardType="numeric"
+						/>
+						<ThemedTextInput
+							style={styles.input}
+							placeholder="Volume (mL or cm³, optional)"
+							value={volume}
+							onChangeText={setVolume}
+							keyboardType="numeric"
+						/>
+						<Button
+							title="Record Weight / Calculate Density"
+							onPress={calculateDensity}
+						/>
+						{density !== null && (
+							<ThemedText style={styles.densityText}>
+								Calculated Density: {density.toFixed(2)} g/mL
+							</ThemedText>
+						)}
+					</View>
+
+					{/* Image Capture Section */}
+					<View style={styles.section}>
+						<ThemedText style={styles.subHeader}>Capture Images</ThemedText>
+						<View style={styles.buttonRow}>
+							<Button
+								title="Take Buffet Photo"
+								onPress={() => openCamera("buffet")}
+							/>
+							<Button
+								title="Take Plate Photo"
+								onPress={() => openCamera("plate")}
+							/>
+							<Button
+								title="Take Container Photo"
+								onPress={() => openCamera("container")}
+							/>
+						</View>
+					</View>
+
+					{/* Image Thumbnails Display */}
+					{renderImageThumbnails(itemImages.buffet, "Buffet Images")}
+					{renderImageThumbnails(itemImages.plate, "Plate Images")}
+					{renderImageThumbnails(itemImages.container, "Container Images")}
+				</ScrollView>
+			</ThemedView>
+		);
+	}
+
+	return (
+		<ThemedView style={styles.container}>
+			{/* Date navigation header - Cronometer Style */}
+			<View style={[styles.dateHeader, { backgroundColor: headerColor }]}>
+				<TouchableOpacity onPress={goToPreviousDay} style={styles.dateArrow}>
+					<MaterialIcons name="chevron-left" size={28} color={textColor} />
+				</TouchableOpacity>
+
+				<ThemedText style={styles.dateTitle}>{formatDate()}</ThemedText>
+
+				<TouchableOpacity onPress={goToNextDay} style={styles.dateArrow}>
+					<MaterialIcons name="chevron-right" size={28} color={textColor} />
+				</TouchableOpacity>
+
+				<TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+					<MaterialIcons name="logout" size={24} color={textColor} />
+				</TouchableOpacity>
+			</View>
+
+			<ScrollView style={styles.mealList}>
+				{/* Breakfast Section */}
+				<View style={styles.mealSection}>
+					<TouchableOpacity
+						style={styles.mealHeader}
+						onPress={() => toggleMealExpansion("Breakfast")}
+					>
+						<ThemedText style={styles.mealTitle}>Breakfast</ThemedText>
+						<MaterialIcons
+							name={expandedMeals.Breakfast ? "expand-less" : "expand-more"}
+							size={24}
+							color={iconColor}
+						/>
+					</TouchableOpacity>
+
+					{expandedMeals.Breakfast && (
+						<View style={styles.mealContent}>
+							{/* List food items for breakfast */}
+							{trackedFoodItems
+								.filter((item) => item.mealCategory === "Breakfast")
+								.map((item) => (
+									<TouchableOpacity
+										key={item.id}
+										style={styles.foodItem}
+										onPress={() => openFoodItemDetails(item)}
+									>
+										<View style={styles.foodItemContent}>
+											<View style={styles.foodIcon}>
+												<MaterialIcons
+													name="restaurant"
+													size={24}
+													color={iconColor}
+												/>
+											</View>
+											<ThemedText style={styles.foodItemName}>
+												{item.name}
+											</ThemedText>
+											<MaterialIcons
+												name="chevron-right"
+												size={24}
+												color={iconColor}
+											/>
+										</View>
+									</TouchableOpacity>
+								))}
+
+							{/* Add food button */}
+							<TouchableOpacity
+								style={styles.addFoodButton}
+								onPress={() => openFoodItemSelection("Breakfast")}
+							>
+								<MaterialIcons name="add" size={24} color={accentColor} />
+								<ThemedText style={styles.addFoodText}>Add Food</ThemedText>
+							</TouchableOpacity>
+						</View>
+					)}
+				</View>
+
+				{/* Lunch Section */}
+				<View style={styles.mealSection}>
+					<TouchableOpacity
+						style={styles.mealHeader}
+						onPress={() => toggleMealExpansion("Lunch")}
+					>
+						<ThemedText style={styles.mealTitle}>Lunch</ThemedText>
+						<MaterialIcons
+							name={expandedMeals.Lunch ? "expand-less" : "expand-more"}
+							size={24}
+							color={iconColor}
+						/>
+					</TouchableOpacity>
+
+					{expandedMeals.Lunch && (
+						<View style={styles.mealContent}>
+							{/* List food items for lunch */}
+							{trackedFoodItems
+								.filter((item) => item.mealCategory === "Lunch")
+								.map((item) => (
+									<TouchableOpacity
+										key={item.id}
+										style={styles.foodItem}
+										onPress={() => openFoodItemDetails(item)}
+									>
+										<View style={styles.foodItemContent}>
+											<View style={styles.foodIcon}>
+												<MaterialIcons
+													name="restaurant"
+													size={24}
+													color={iconColor}
+												/>
+											</View>
+											<ThemedText style={styles.foodItemName}>
+												{item.name}
+											</ThemedText>
+											<MaterialIcons
+												name="chevron-right"
+												size={24}
+												color={iconColor}
+											/>
+										</View>
+									</TouchableOpacity>
+								))}
+
+							{/* Add food button */}
+							<TouchableOpacity
+								style={styles.addFoodButton}
+								onPress={() => openFoodItemSelection("Lunch")}
+							>
+								<MaterialIcons name="add" size={24} color={accentColor} />
+								<ThemedText style={styles.addFoodText}>Add Food</ThemedText>
+							</TouchableOpacity>
+						</View>
+					)}
+				</View>
+
+				{/* Dinner Section */}
+				<View style={styles.mealSection}>
+					<TouchableOpacity
+						style={styles.mealHeader}
+						onPress={() => toggleMealExpansion("Dinner")}
+					>
+						<ThemedText style={styles.mealTitle}>Dinner</ThemedText>
+						<MaterialIcons
+							name={expandedMeals.Dinner ? "expand-less" : "expand-more"}
+							size={24}
+							color={iconColor}
+						/>
+					</TouchableOpacity>
+
+					{expandedMeals.Dinner && (
+						<View style={styles.mealContent}>
+							{/* List food items for dinner */}
+							{trackedFoodItems
+								.filter((item) => item.mealCategory === "Dinner")
+								.map((item) => (
+									<TouchableOpacity
+										key={item.id}
+										style={styles.foodItem}
+										onPress={() => openFoodItemDetails(item)}
+									>
+										<View style={styles.foodItemContent}>
+											<View style={styles.foodIcon}>
+												<MaterialIcons
+													name="restaurant"
+													size={24}
+													color={iconColor}
+												/>
+											</View>
+											<ThemedText style={styles.foodItemName}>
+												{item.name}
+											</ThemedText>
+											<MaterialIcons
+												name="chevron-right"
+												size={24}
+												color={iconColor}
+											/>
+										</View>
+									</TouchableOpacity>
+								))}
+
+							{/* Add food button */}
+							<TouchableOpacity
+								style={styles.addFoodButton}
+								onPress={() => openFoodItemSelection("Dinner")}
+							>
+								<MaterialIcons name="add" size={24} color={accentColor} />
+								<ThemedText style={styles.addFoodText}>Add Food</ThemedText>
+							</TouchableOpacity>
+						</View>
+					)}
+				</View>
+
+				{/* Snacks Section */}
+				<View style={styles.mealSection}>
+					<TouchableOpacity
+						style={styles.mealHeader}
+						onPress={() => toggleMealExpansion("Snacks")}
+					>
+						<ThemedText style={styles.mealTitle}>Snacks</ThemedText>
+						<MaterialIcons
+							name={expandedMeals.Snacks ? "expand-less" : "expand-more"}
+							size={24}
+							color={iconColor}
+						/>
+					</TouchableOpacity>
+
+					{expandedMeals.Snacks && (
+						<View style={styles.mealContent}>
+							{/* List food items for snacks */}
+							{trackedFoodItems
+								.filter((item) => item.mealCategory === "Snacks")
+								.map((item) => (
+									<TouchableOpacity
+										key={item.id}
+										style={styles.foodItem}
+										onPress={() => openFoodItemDetails(item)}
+									>
+										<View style={styles.foodItemContent}>
+											<View style={styles.foodIcon}>
+												<MaterialIcons
+													name="restaurant"
+													size={24}
+													color={iconColor}
+												/>
+											</View>
+											<ThemedText style={styles.foodItemName}>
+												{item.name}
+											</ThemedText>
+											<MaterialIcons
+												name="chevron-right"
+												size={24}
+												color={iconColor}
+											/>
+										</View>
+									</TouchableOpacity>
+								))}
+
+							{/* Add food button */}
+							<TouchableOpacity
+								style={styles.addFoodButton}
+								onPress={() => openFoodItemSelection("Snacks")}
+							>
+								<MaterialIcons name="add" size={24} color={accentColor} />
+								<ThemedText style={styles.addFoodText}>Add Food</ThemedText>
+							</TouchableOpacity>
+						</View>
+					)}
+				</View>
+			</ScrollView>
+
+			{/* Food Selection Modal */}
+			{renderFoodSelectionModal()}
+		</ThemedView>
+	);
+}
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+	},
+	// Date Header - Cronometer Style
+	dateHeader: {
+		flexDirection: "row",
+		alignItems: "center",
+		paddingHorizontal: 15,
+		paddingTop: 50,
+		paddingBottom: 15,
+	},
+	dateArrow: {
+		padding: 10,
+	},
+	dateTitle: {
+		fontSize: 24,
+		fontWeight: "bold",
+		flex: 1,
+		textAlign: "center",
+	},
+	logoutButton: {
+		padding: 10,
+	},
+	// Meal Sections
+	mealList: {
+		flex: 1,
+	},
+	mealSection: {
+		marginBottom: 1, // Minimal gap between sections
+		borderBottomWidth: 1,
+		borderBottomColor: "#eee",
+	},
+	mealHeader: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		paddingHorizontal: 15,
+		paddingVertical: 15,
+		backgroundColor: "rgba(0,0,0,0.05)",
+	},
+	mealTitle: {
+		fontSize: 18,
+		fontWeight: "600",
+	},
+	mealContent: {
+		paddingBottom: 10,
+	},
+	// Food Items
+	foodItem: {
+		borderBottomWidth: 1,
+		borderBottomColor: "#eee",
+	},
+	foodItemContent: {
+		flexDirection: "row",
+		alignItems: "center",
+		paddingHorizontal: 15,
+		paddingVertical: 15,
+	},
+	foodIcon: {
+		marginRight: 10,
+	},
+	foodItemName: {
+		flex: 1,
+		fontSize: 16,
+	},
+	// Add Food Button
+	addFoodButton: {
+		flexDirection: "row",
+		alignItems: "center",
+		paddingHorizontal: 15,
+		paddingVertical: 15,
+	},
+	addFoodText: {
+		marginLeft: 10,
+		fontSize: 16,
+		color: "#2196F3", // Blue color for add action
+	},
+	// Modal for food selection
+	modalContainer: {
+		flex: 1,
+		paddingTop: 40,
+	},
+	modalHeader: {
+		flexDirection: "row",
+		alignItems: "center",
+		paddingHorizontal: 15,
+		paddingVertical: 15,
+		borderBottomWidth: 1,
+		borderBottomColor: "#eee",
+	},
+	modalTitle: {
+		flex: 1,
+		fontSize: 18,
+		fontWeight: "600",
+		textAlign: "center",
+	},
+	searchInput: {
+		margin: 15,
+		paddingHorizontal: 10,
+		paddingVertical: 8,
+		borderWidth: 1,
+		borderColor: "#ccc",
+		borderRadius: 5,
+	},
+	foodItemList: {
+		flex: 1,
+	},
+	foodItemSelection: {
+		flexDirection: "row",
+		alignItems: "center",
+		paddingHorizontal: 15,
+		paddingVertical: 15,
+		borderBottomWidth: 1,
+		borderBottomColor: "#eee",
+	},
+	noResultsText: {
+		textAlign: "center",
+		padding: 20,
+		fontStyle: "italic",
+		color: "#888",
+	},
+	// Detail View
+	detailHeader: {
+		flexDirection: "row",
+		alignItems: "center",
+		paddingHorizontal: 15,
+		paddingTop: 50,
+		paddingBottom: 15,
+		borderBottomWidth: 1,
+		borderBottomColor: "#ccc",
+	},
+	detailTitle: {
+		flex: 1,
+		fontSize: 20,
+		fontWeight: "600",
+		textAlign: "center",
+	},
+	detailContent: {
+		flex: 1,
+	},
+	// Sections
+	section: {
+		paddingHorizontal: 15,
+		paddingVertical: 15,
+		borderBottomWidth: 1,
+		borderBottomColor: "#eee",
+	},
+	subHeader: {
+		fontSize: 18,
+		fontWeight: "600",
+		marginBottom: 15,
+	},
+	input: {
+		marginBottom: 15,
+	},
+	densityText: {
+		marginTop: 10,
+		fontSize: 16,
+		fontStyle: "italic",
+		textAlign: "center",
+	},
+	buttonRow: {
+		flexDirection: "row",
+		justifyContent: "space-around",
+		marginBottom: 15,
+		flexWrap: "wrap",
+		gap: 10,
+	},
+	// Thumbnails
+	thumbnailContainer: {
+		paddingHorizontal: 15,
+		paddingVertical: 15,
+		borderBottomWidth: 1,
+		borderBottomColor: "#eee",
+	},
+	thumbnailScroll: {
+		marginTop: 5,
+	},
+	thumbnail: {
+		width: 100,
+		height: 100,
+		borderRadius: 8,
+		marginRight: 10,
+		borderWidth: 1,
+		borderColor: "#ccc",
+	},
+	noImagesText: {
+		fontSize: 14,
+		color: "#888",
+		fontStyle: "italic",
+	},
+});
 
 // ./app/_layout.tsx
 import {
@@ -268,7 +1049,6 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
 
-import { useColorScheme } from "@/hooks/useColorScheme";
 import { AppThemeProvider, useAppTheme } from "@/context/ThemeContext";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { Colors } from "@/constants/Colors";
@@ -300,13 +1080,31 @@ function RootNavigation() {
 					headerRight: () => <ThemeToggleButton />,
 				}}
 			>
-				{/* Make the login screen show the header */}
-				<Stack.Screen name="index" options={{ title: "Login" }} />
-
-				{/* Other screens will inherit screenOptions */}
-				<Stack.Screen name="admin" options={{ title: "Admin Dashboard" }} />
-				<Stack.Screen name="user" options={{ title: "User Screen" }} />
-				<Stack.Screen name="imagetaker" options={{ title: "Image Taker" }} />
+				<Stack.Screen
+					name="index"
+					options={{ title: "Home", headerShown: true }}
+				/>
+				<Stack.Screen
+					name="login"
+					options={{ title: "Login", headerShown: true }}
+				/>
+                <Stack.Screen
+                    name="signup"
+                    options={{ title: "Sign Up", headerShown: true }}
+                />
+				<Stack.Screen
+					name="adminDashboard"
+					options={{ title: "Admin Dashboard" }}
+				/>
+				<Stack.Screen name="userDashboard" options={{ title: "User Screen" }} />
+				<Stack.Screen
+					name="staffDashboard"
+					options={{ title: "Image Taker" }}
+				/>
+				<Stack.Screen
+					name="nutritionDashboard"
+					options={{ title: "Nutrition Dashboard" }}
+				/>
 
 				{/* +not-found screen */}
 				<Stack.Screen name="+not-found" />
@@ -378,6 +1176,336 @@ const styles = StyleSheet.create({
 });
 
 // ./app/nutritionDashboard.tsx
+import React, { useState } from "react";
+import {
+	View,
+	FlatList,
+	StyleSheet,
+	Modal,
+	Button,
+	Alert,
+	TouchableOpacity,
+} from "react-native";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedTextInput } from "@/components/ThemedTextInput"; // Assuming you create/have this
+import { MaterialIcons } from "@expo/vector-icons"; // For icons
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { router } from "expo-router"; // For logout if needed
+
+// Define the structure for food item data including nutrition
+interface FoodItem {
+	id: string;
+	name: string;
+	calories: number;
+	protein: number; // grams
+	carbs: number; // grams
+	fat: number; // grams
+}
+
+// Fake data for now
+const initialFoodData: FoodItem[] = [
+	{ id: "1", name: "Apple", calories: 95, protein: 0.5, carbs: 25, fat: 0.3 },
+	{
+		id: "2",
+		name: "Chicken Breast (100g)",
+		calories: 165,
+		protein: 31,
+		carbs: 0,
+		fat: 3.6,
+	},
+	{
+		id: "3",
+		name: "Brown Rice (cooked, 1 cup)",
+		calories: 215,
+		protein: 5,
+		carbs: 45,
+		fat: 1.8,
+	},
+	{
+		id: "4",
+		name: "Broccoli (1 cup)",
+		calories: 55,
+		protein: 3.7,
+		carbs: 11,
+		fat: 0.6,
+	},
+];
+
+export default function NutritionistDashboardScreen() {
+	const [foodItems, setFoodItems] = useState<FoodItem[]>(initialFoodData);
+	const [modalVisible, setModalVisible] = useState(false);
+	const [selectedItem, setSelectedItem] = useState<FoodItem | null>(null);
+	// State for the input fields in the modal
+	const [editName, setEditName] = useState("");
+	const [editCalories, setEditCalories] = useState("");
+	const [editProtein, setEditProtein] = useState("");
+	const [editCarbs, setEditCarbs] = useState("");
+	const [editFat, setEditFat] = useState("");
+
+	const backgroundColor = useThemeColor({}, "background");
+	const textColor = useThemeColor({}, "text");
+	const iconColor = useThemeColor({}, "icon");
+	const separatorColor = useThemeColor({}, "separator");
+	const inputBackgroundColor = useThemeColor({}, "inputBackground"); // Add this color to your theme setup
+
+	const handleEditPress = (item: FoodItem) => {
+		setSelectedItem(item);
+		setEditName(item.name); // Pre-fill modal fields
+		setEditCalories(item.calories.toString());
+		setEditProtein(item.protein.toString());
+		setEditCarbs(item.carbs.toString());
+		setEditFat(item.fat.toString());
+		setModalVisible(true);
+	};
+
+	const handleSave = () => {
+		if (!selectedItem) return;
+
+		// Basic validation (can be improved)
+		const calories = parseFloat(editCalories);
+		const protein = parseFloat(editProtein);
+		const carbs = parseFloat(editCarbs);
+		const fat = parseFloat(editFat);
+
+		if (isNaN(calories) || isNaN(protein) || isNaN(carbs) || isNaN(fat)) {
+			Alert.alert("Invalid Input", "Nutritional values must be numbers.");
+			return;
+		}
+		if (!editName.trim()) {
+			Alert.alert("Invalid Input", "Food item name cannot be empty.");
+			return;
+		}
+
+		setFoodItems((prevItems) =>
+			prevItems.map((item) =>
+				item.id === selectedItem.id
+					? { ...item, name: editName, calories, protein, carbs, fat }
+					: item,
+			),
+		);
+		setModalVisible(false);
+		setSelectedItem(null); // Clear selection
+	};
+
+	const handleLogout = () => {
+		// Add actual logout logic here (clear tokens/state) if implemented
+		console.log("Logging out...");
+		router.replace("/"); // Navigate to login screen
+	};
+
+	const renderItem = ({ item }: { item: FoodItem }) => (
+		<View style={[styles.itemContainer, { borderBottomColor: separatorColor }]}>
+			<View style={styles.itemTextContainer}>
+				<ThemedText style={styles.itemName}>{item.name}</ThemedText>
+				<ThemedText style={styles.itemDetail}>
+					Cal: {item.calories} | P: {item.protein}g | C: {item.carbs}g | F:{" "}
+					{item.fat}g
+				</ThemedText>
+			</View>
+			<TouchableOpacity
+				onPress={() => handleEditPress(item)}
+				style={styles.iconButton}
+			>
+				<MaterialIcons name="edit" size={24} color={iconColor} />
+			</TouchableOpacity>
+		</View>
+	);
+
+	return (
+		<ThemedView style={styles.container}>
+			<View style={styles.header}>
+				<ThemedText style={styles.title}>Nutritionist Dashboard</ThemedText>
+				{/* Optional Logout Button */}
+				<TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+					<MaterialIcons name="logout" size={24} color={iconColor} />
+				</TouchableOpacity>
+			</View>
+
+			<FlatList
+				data={foodItems}
+				renderItem={renderItem}
+				keyExtractor={(item) => item.id}
+				style={styles.list}
+			/>
+
+			{/* Edit Modal */}
+			<Modal
+				animationType="slide"
+				transparent={true}
+				visible={modalVisible}
+				onRequestClose={() => {
+					setModalVisible(!modalVisible);
+					setSelectedItem(null);
+				}}
+			>
+				<View style={styles.modalCenteredView}>
+					<ThemedView style={styles.modalView}>
+						<ThemedText style={styles.modalTitle}>
+							Edit Nutritional Info
+						</ThemedText>
+
+						<ThemedText style={styles.label}>Name</ThemedText>
+						<ThemedTextInput
+							style={styles.input} // Use ThemedTextInput
+							placeholder="Food Item Name"
+							value={editName}
+							onChangeText={setEditName}
+							// placeholderTextColor={useThemeColor({}, 'secondaryText')} // Optional: finer theme control
+						/>
+
+						<ThemedText style={styles.label}>Calories</ThemedText>
+						<ThemedTextInput
+							style={styles.input}
+							placeholder="e.g., 150"
+							value={editCalories}
+							onChangeText={setEditCalories}
+							keyboardType="numeric"
+						/>
+
+						<ThemedText style={styles.label}>Protein (g)</ThemedText>
+						<ThemedTextInput
+							style={styles.input}
+							placeholder="e.g., 25"
+							value={editProtein}
+							onChangeText={setEditProtein}
+							keyboardType="numeric"
+						/>
+
+						<ThemedText style={styles.label}>Carbs (g)</ThemedText>
+						<ThemedTextInput
+							style={styles.input}
+							placeholder="e.g., 10"
+							value={editCarbs}
+							onChangeText={setEditCarbs}
+							keyboardType="numeric"
+						/>
+
+						<ThemedText style={styles.label}>Fat (g)</ThemedText>
+						<ThemedTextInput
+							style={styles.input}
+							placeholder="e.g., 5"
+							value={editFat}
+							onChangeText={setEditFat}
+							keyboardType="numeric"
+						/>
+
+						<View style={styles.modalButtonContainer}>
+							<Button
+								title="Cancel"
+								onPress={() => {
+									setModalVisible(false);
+									setSelectedItem(null);
+								}}
+								color="#ff6347"
+							/>
+							<Button title="Save" onPress={handleSave} />
+						</View>
+					</ThemedView>
+				</View>
+			</Modal>
+		</ThemedView>
+	);
+}
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+	},
+	header: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		paddingHorizontal: 15,
+		paddingTop: 50, // Adjust for status bar height if needed (use SafeAreaView or react-native-safe-area-context)
+		paddingBottom: 10,
+		borderBottomWidth: 1,
+		borderBottomColor: "#ccc", // Use theme color later
+	},
+	title: {
+		fontSize: 24,
+		fontWeight: "bold",
+	},
+	logoutButton: {
+		padding: 5,
+	},
+	list: {
+		flex: 1,
+	},
+	itemContainer: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		paddingVertical: 15,
+		paddingHorizontal: 15,
+		borderBottomWidth: 1,
+		// borderBottomColor set dynamically
+	},
+	itemTextContainer: {
+		flex: 1, // Allows text to take available space
+		marginRight: 10, // Space before the button
+	},
+	itemName: {
+		fontSize: 18,
+		fontWeight: "500",
+	},
+	itemDetail: {
+		fontSize: 14,
+		opacity: 0.8,
+		marginTop: 4,
+	},
+	iconButton: {
+		padding: 8, // Increase touch area slightly
+	},
+	// Modal Styles (similar to adminDashboard)
+	modalCenteredView: {
+		flex: 1,
+		justifyContent: "center",
+		alignItems: "center",
+		backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent background
+	},
+	modalView: {
+		margin: 20,
+		borderRadius: 20,
+		padding: 35,
+		alignItems: "stretch", // Make items stretch
+		shadowColor: "#000",
+		shadowOffset: {
+			width: 0,
+			height: 2,
+		},
+		shadowOpacity: 0.25,
+		shadowRadius: 4,
+		elevation: 5,
+		width: "90%", // Control modal width
+	},
+	modalTitle: {
+		marginBottom: 20,
+		textAlign: "center",
+		fontSize: 20,
+		fontWeight: "bold",
+	},
+	label: {
+		fontSize: 16,
+		marginBottom: 5,
+		// fontWeight: '500', // Optional
+	},
+	input: {
+		// Using ThemedTextInput now, style it as needed or rely on ThemedTextInput's internal styles
+		// Example styles if ThemedTextInput doesn't have them:
+		// height: 40,
+		// borderWidth: 1,
+		// padding: 10,
+		marginBottom: 15,
+		// borderRadius: 5,
+		// Specify themed border/background in ThemedTextInput or here
+	},
+	modalButtonContainer: {
+		flexDirection: "row",
+		justifyContent: "space-around", // Space out buttons
+		marginTop: 20,
+	},
+});
 
 // ./app/adminDashboard.tsx
 import React, { useState, useEffect } from "react";
@@ -827,30 +1955,406 @@ const styles = StyleSheet.create({
 	},
 });
 
-// ./app/home.tsx
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+// ./app/login.tsx
+import React, { useState } from "react";
+import { View, TextInput, Button, StyleSheet, Alert } from "react-native";
+import { useRouter } from "expo-router";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
-const HomeScreen = () => {
+export default function LoginScreen() {
+	const [username, setUsername] = useState("");
+	const [password, setPassword] = useState("");
+	const router = useRouter();
+
+	// Get theme colors
+	const textColor = useThemeColor({}, "text");
+	const backgroundColor = useThemeColor({}, "background");
+	const borderColor = useThemeColor({}, "icon");
+	const placeholderColor = useThemeColor({}, "icon");
+
+	const handleLogin = () => {
+		// Basic client-side check (replace with real auth later)
+		if (username === "admin" && password === "password") {
+			// Use a placeholder password
+			router.replace("/adminDashboard");
+		} else if (username === "user" && password === "password") {
+			router.replace("/userDashboard");
+		} else if (username === "mess Staff" && password === "password") {
+			router.replace("/staffDashboard");
+		} else if (username === "nutrition" && password === "password") {
+			router.replace("/nutritionDashboard");
+		} else {
+			Alert.alert("Login Failed", "Invalid username or password");
+		}
+	};
+
 	return (
-		<View style={styles.container}>
-			<Text>Welcome to the Home Screen!</Text>
-			{/* Display user-specific content here */}
-		</View>
+		<ThemedView style={styles.container}>
+			<ThemedText type="title">Login</ThemedText>
+			<TextInput
+				style={[
+					styles.input,
+					{
+						color: textColor,
+						backgroundColor: backgroundColor,
+						borderColor: borderColor,
+					},
+				]}
+				placeholder="Username"
+				value={username}
+				onChangeText={setUsername}
+				placeholderTextColor={placeholderColor}
+			/>
+			<TextInput
+				style={[
+					styles.input,
+					{
+						color: textColor,
+						backgroundColor: backgroundColor,
+						borderColor: borderColor,
+					},
+				]}
+				placeholder="Password"
+				value={password}
+				onChangeText={setPassword}
+				secureTextEntry
+				placeholderTextColor={placeholderColor}
+			/>
+			<Button
+				title="Login"
+				onPress={handleLogin}
+				color={useThemeColor({}, "primary")}
+			/>
+		</ThemedView>
 	);
-};
+}
 
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		justifyContent: "center",
 		alignItems: "center",
+		justifyContent: "center",
+		padding: 20,
+	},
+	input: {
+		width: "100%",
+		marginVertical: 10,
+		padding: 15,
+		borderWidth: 1,
+		borderRadius: 5,
 	},
 });
 
-export default HomeScreen;
-
 // ./app/userDashboard.tsx
+import { Platform } from "react-native";
+
+// Import both the native and web dashboard components
+// Adjust the import paths based on where you save the files
+import UserDashboardNative from "./userDashNative"; // Assuming you renamed the original
+import UserDashboardWeb from "./userDashWeb"; // The web component created earlier
+
+export default function UserDashboard() {
+	// Check the platform
+	if (Platform.OS === "web") {
+		// If the platform is web, render the web-specific dashboard
+		return <UserDashboardWeb />;
+	} else {
+		// Otherwise (iOS, Android), render the native dashboard
+		return <UserDashboardNative />;
+	}
+}
+
+// No styles needed here usually, as the styling is within the specific components.
+
+// ./app/userDashWeb.tsx
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+// import axios from 'axios'; // Or use fetch
+
+interface CameraDevice {
+  id: string;
+  label: string;
+}
+
+interface NutritionResult {
+  // Define the structure of the data you expect from your backend
+  foodItem: string;
+  calories: number;
+  protein: number;
+  // ... other nutritional info
+  confidenceScore: number;
+  rating: number; // Star rating
+}
+
+const UserWebDashboard: React.FC = () => {
+  const [devices, setDevices] = useState<CameraDevice[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null); // Store as base64 data URL or blob URL
+  const [results, setResults] = useState<NutritionResult | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null); // null = unknown, true = granted, false = denied/unavailable
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null); // For capturing frame
+
+  // --- Permission Handling ---
+  const checkAndRequestPermissions = useCallback(async () => {
+    setErrorMessage(null);
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setErrorMessage('Camera access is not supported by this browser.');
+        setPermissionGranted(false);
+        return;
+    }
+    try {
+        // Check permission status first
+        const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName }); // Cast needed for older TS versions
+        if (permissionStatus.state === 'granted') {
+            setPermissionGranted(true);
+            loadDevices(); // Load devices if permission already granted
+        } else if (permissionStatus.state === 'prompt') {
+            setPermissionGranted(null); // Still need to ask
+             // Optional: show a message explaining why you need camera before requesting
+            requestCameraAccess(); // Or trigger this via a user action like a button press
+        } else { // denied
+            setErrorMessage('Camera permission was denied. Please enable it in your browser settings.');
+            setPermissionGranted(false);
+        }
+
+        permissionStatus.onchange = () => {
+             if(permissionStatus.state === 'granted') {
+                setPermissionGranted(true);
+                loadDevices();
+             } else {
+                setPermissionGranted(false);
+                setErrorMessage('Camera permission status changed.');
+                stopStream(); // Stop stream if permission revoked
+             }
+        }
+
+    } catch (error) {
+        console.error("Error checking/requesting permissions:", error);
+        setErrorMessage('Error checking camera permissions.');
+        setPermissionGranted(false);
+    }
+  }, []);
+
+  const requestCameraAccess = async () => {
+     try {
+        // Requesting access here will trigger the prompt if state was 'prompt'
+        await navigator.mediaDevices.getUserMedia({ video: true });
+        setPermissionGranted(true);
+        loadDevices(); // Load devices after getting permission
+     } catch(error: any) {
+        console.error("Error getting user media:", error);
+         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+           setErrorMessage('You denied camera access. Please enable it in browser settings.');
+         } else {
+           setErrorMessage(`Could not access camera: ${error.message}`);
+         }
+        setPermissionGranted(false);
+     }
+  }
+
+
+  // --- Device Handling ---
+  const loadDevices = useCallback(async () => {
+    try {
+        await navigator.mediaDevices.getUserMedia({ video: true }); // Ensure permission is active before enumerating
+        const availableDevices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = availableDevices
+            .filter(device => device.kind === 'videoinput')
+            .map(device => ({ id: device.deviceId, label: device.label || `Camera ${devices.length + 1}` }));
+        setDevices(videoDevices);
+        if (videoDevices.length > 0 && !selectedDeviceId) {
+            setSelectedDeviceId(videoDevices[0].id); // Select the first camera by default
+        }
+    } catch (error) {
+        console.error("Error loading devices:", error);
+        setErrorMessage('Could not load camera devices.');
+        setPermissionGranted(false); // Likely permission issue
+    }
+  }, [selectedDeviceId]); // dependency added
+
+
+  // --- Stream Handling ---
+  const startStream = useCallback(async () => {
+    if (stream) { // Stop previous stream if changing device
+        stopStream();
+    }
+    if (selectedDeviceId && permissionGranted) {
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: { exact: selectedDeviceId } }
+            });
+            setStream(mediaStream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+            }
+        } catch (error) {
+            console.error("Error starting stream:", error);
+            setErrorMessage('Could not start camera stream.');
+             setPermissionGranted(false); // Might be a permission issue again
+        }
+    }
+  }, [selectedDeviceId, permissionGranted]); // Added stream to dependencies
+
+  const stopStream = () => {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+         if (videoRef.current) {
+             videoRef.current.srcObject = null;
+         }
+    }
+  };
+
+  // --- Effects ---
+  useEffect(() => {
+    checkAndRequestPermissions(); // Check permissions on component mount
+    // Cleanup function to stop stream when component unmounts
+    return () => {
+        stopStream();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
+
+
+  useEffect(() => {
+    if (permissionGranted && selectedDeviceId) {
+      startStream(); // Start stream when permission is granted and a device is selected
+    } else {
+        stopStream(); // Stop if permission lost or no device
+    }
+    // Include startStream in dependencies if needed, ensure useCallback covers its own deps
+  }, [permissionGranted, selectedDeviceId, startStream]);
+
+  // --- Capture & Upload ---
+  const captureImage = () => {
+    setResults(null); // Clear previous results
+    setErrorMessage(null);
+    if (videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        if (context) {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // Get image data (e.g., as base64 data URL)
+            const imageDataUrl = canvas.toDataURL('image/jpeg'); // Or image/png
+            setCapturedImage(imageDataUrl);
+            // Send to backend
+            uploadImage(imageDataUrl);
+        }
+    }
+  };
+
+  const uploadImage = async (imageDataUrl: string) => {
+    setIsLoading(true);
+    try {
+        // Assuming your backend expects a POST request with JSON payload
+        const response = await fetch('/api/analyze-food', { // Replace with your actual backend endpoint
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Add Authorization header if needed:
+                // 'Authorization': `Bearer ${your_jwt_token}`
+            },
+            body: JSON.stringify({ image: imageDataUrl }), // Send base64 string
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server responded with status: ${response.status}`);
+        }
+
+        const data: NutritionResult = await response.json();
+        setResults(data);
+
+    } catch (error: any) {
+        console.error("Error uploading image:", error);
+        setErrorMessage(`Failed to get analysis: ${error.message}`);
+        setResults(null);
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  // --- Rendering ---
+  return (
+    <div>
+      <h2>User Web Dashboard</h2>
+
+      {errorMessage && <p style={{ color: 'red' }}>Error: {errorMessage}</p>}
+
+      {!permissionGranted && permissionGranted !== null && (
+         <button onClick={requestCameraAccess}>Grant Camera Permission</button>
+      )}
+
+
+      {permissionGranted && (
+        <div>
+           {/* Camera Selection Dropdown */}
+           <label htmlFor="camera-select">Select Camera:</label>
+           <select
+             id="camera-select"
+             value={selectedDeviceId ?? ''}
+             onChange={(e) => setSelectedDeviceId(e.target.value)}
+             disabled={devices.length === 0}
+           >
+             {devices.map(device => (
+               <option key={device.id} value={device.id}>
+                 {device.label}
+               </option>
+             ))}
+           </select>
+
+           {/* Video Preview */}
+           <div style={{ position: 'relative', width: '640px', height: '480px', border:'1px solid black', margin: '10px 0' }}>
+                <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline // Important for mobile browsers
+                    style={{ width: '100%', height: '100%' }}
+                    muted // Often required for autoplay
+                />
+                {/* Hidden canvas for capturing */}
+                <canvas ref={canvasRef} style={{ display: 'none' }} />
+           </div>
+
+
+           {/* Capture Button */}
+           <button onClick={captureImage} disabled={!stream || isLoading}>
+             {isLoading ? 'Analyzing...' : 'Take Picture & Analyze'}
+           </button>
+
+           {/* Display Captured Image (Optional) */}
+           {/* {capturedImage && <img src={capturedImage} alt="Captured" width="320" />} */}
+
+           {/* Display Results */}
+           {isLoading && <p>Loading results...</p>}
+           {results && (
+             <div>
+               <h3>Analysis Results</h3>
+               <p>Food Item: {results.foodItem}</p>
+               <p>Calories: {results.calories}</p>
+               <p>Protein: {results.protein}</p>
+               {/* ... other results */}
+               <p>Confidence: {results.confidenceScore}</p>
+               <p>Rating: {'⭐'.repeat(results.rating)}</p> {/* Example star rating */}
+             </div>
+           )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UserWebDashboard;
+
+// ./app/userDashNative.tsx
 import React, { useState } from "react";
 import {
 	StyleSheet,
@@ -1221,39 +2725,96 @@ export * from 'expo-router';
 declare module 'expo-router' {
   export namespace ExpoRouter {
     export interface __routes<T extends string | object = string> {
-      hrefInputParams: { pathname: Router.RelativePathString, params?: Router.UnknownInputParams } | { pathname: Router.ExternalPathString, params?: Router.UnknownInputParams } | { pathname: `/adminDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/home`; params?: Router.UnknownInputParams; } | { pathname: `/`; params?: Router.UnknownInputParams; } | { pathname: `/nutritionDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/staffDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/userDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/_sitemap`; params?: Router.UnknownInputParams; } | { pathname: `/+not-found`, params: Router.UnknownInputParams & {  } };
-      hrefOutputParams: { pathname: Router.RelativePathString, params?: Router.UnknownOutputParams } | { pathname: Router.ExternalPathString, params?: Router.UnknownOutputParams } | { pathname: `/adminDashboard`; params?: Router.UnknownOutputParams; } | { pathname: `/home`; params?: Router.UnknownOutputParams; } | { pathname: `/`; params?: Router.UnknownOutputParams; } | { pathname: `/nutritionDashboard`; params?: Router.UnknownOutputParams; } | { pathname: `/staffDashboard`; params?: Router.UnknownOutputParams; } | { pathname: `/userDashboard`; params?: Router.UnknownOutputParams; } | { pathname: `/_sitemap`; params?: Router.UnknownOutputParams; } | { pathname: `/+not-found`, params: Router.UnknownOutputParams & {  } };
-      href: Router.RelativePathString | Router.ExternalPathString | `/adminDashboard${`?${string}` | `#${string}` | ''}` | `/home${`?${string}` | `#${string}` | ''}` | `/${`?${string}` | `#${string}` | ''}` | `/nutritionDashboard${`?${string}` | `#${string}` | ''}` | `/staffDashboard${`?${string}` | `#${string}` | ''}` | `/userDashboard${`?${string}` | `#${string}` | ''}` | `/_sitemap${`?${string}` | `#${string}` | ''}` | { pathname: Router.RelativePathString, params?: Router.UnknownInputParams } | { pathname: Router.ExternalPathString, params?: Router.UnknownInputParams } | { pathname: `/adminDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/home`; params?: Router.UnknownInputParams; } | { pathname: `/`; params?: Router.UnknownInputParams; } | { pathname: `/nutritionDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/staffDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/userDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/_sitemap`; params?: Router.UnknownInputParams; } | `/+not-found` | { pathname: `/+not-found`, params: Router.UnknownInputParams & {  } };
+      hrefInputParams: { pathname: Router.RelativePathString, params?: Router.UnknownInputParams } | { pathname: Router.ExternalPathString, params?: Router.UnknownInputParams } | { pathname: `/adminDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/`; params?: Router.UnknownInputParams; } | { pathname: `/login`; params?: Router.UnknownInputParams; } | { pathname: `/nutritionDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/signup`; params?: Router.UnknownInputParams; } | { pathname: `/staffDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/userDashNative`; params?: Router.UnknownInputParams; } | { pathname: `/userDashWeb`; params?: Router.UnknownInputParams; } | { pathname: `/userDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/_sitemap`; params?: Router.UnknownInputParams; } | { pathname: `/+not-found`, params: Router.UnknownInputParams & {  } };
+      hrefOutputParams: { pathname: Router.RelativePathString, params?: Router.UnknownOutputParams } | { pathname: Router.ExternalPathString, params?: Router.UnknownOutputParams } | { pathname: `/adminDashboard`; params?: Router.UnknownOutputParams; } | { pathname: `/`; params?: Router.UnknownOutputParams; } | { pathname: `/login`; params?: Router.UnknownOutputParams; } | { pathname: `/nutritionDashboard`; params?: Router.UnknownOutputParams; } | { pathname: `/signup`; params?: Router.UnknownOutputParams; } | { pathname: `/staffDashboard`; params?: Router.UnknownOutputParams; } | { pathname: `/userDashNative`; params?: Router.UnknownOutputParams; } | { pathname: `/userDashWeb`; params?: Router.UnknownOutputParams; } | { pathname: `/userDashboard`; params?: Router.UnknownOutputParams; } | { pathname: `/_sitemap`; params?: Router.UnknownOutputParams; } | { pathname: `/+not-found`, params: Router.UnknownOutputParams & {  } };
+      href: Router.RelativePathString | Router.ExternalPathString | `/adminDashboard${`?${string}` | `#${string}` | ''}` | `/${`?${string}` | `#${string}` | ''}` | `/login${`?${string}` | `#${string}` | ''}` | `/nutritionDashboard${`?${string}` | `#${string}` | ''}` | `/signup${`?${string}` | `#${string}` | ''}` | `/staffDashboard${`?${string}` | `#${string}` | ''}` | `/userDashNative${`?${string}` | `#${string}` | ''}` | `/userDashWeb${`?${string}` | `#${string}` | ''}` | `/userDashboard${`?${string}` | `#${string}` | ''}` | `/_sitemap${`?${string}` | `#${string}` | ''}` | { pathname: Router.RelativePathString, params?: Router.UnknownInputParams } | { pathname: Router.ExternalPathString, params?: Router.UnknownInputParams } | { pathname: `/adminDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/`; params?: Router.UnknownInputParams; } | { pathname: `/login`; params?: Router.UnknownInputParams; } | { pathname: `/nutritionDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/signup`; params?: Router.UnknownInputParams; } | { pathname: `/staffDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/userDashNative`; params?: Router.UnknownInputParams; } | { pathname: `/userDashWeb`; params?: Router.UnknownInputParams; } | { pathname: `/userDashboard`; params?: Router.UnknownInputParams; } | { pathname: `/_sitemap`; params?: Router.UnknownInputParams; } | `/+not-found` | { pathname: `/+not-found`, params: Router.UnknownInputParams & {  } };
     }
   }
 }
 
 // ./components/ThemeToggleButton.tsx
 import React from "react";
-import { Pressable, StyleSheet } from "react-native";
-import { useAppTheme } from "@/context/ThemeContext";
-import { ThemedText } from "./ThemedText"; // Use ThemedText for the icon
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { TouchableOpacity, StyleSheet } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useAppTheme } from "@/context/ThemeContext"; // Adjust import path if needed
+import { useThemeColor } from "@/hooks/useThemeColor"; // Adjust import path if needed
 
-export function ThemeToggleButton() {
-  const { theme, toggleTheme } = useAppTheme();
-  const iconColor = useThemeColor({}, "icon"); // Get icon color from theme
+export const ThemeToggleButton = () => {
+	const { toggleTheme, theme } = useAppTheme();
+	const iconColor = useThemeColor({}, "icon");
+	const iconName = theme === "light" ? "dark-mode" : "light-mode";
 
-  return (
-    <Pressable onPress={toggleTheme} style={styles.button}>
-      {/* Simple Text Icon - Replace with actual Icon component if available */}
-      <ThemedText style={{ color: iconColor, fontSize: 20 }}>
-        {theme === "light" ? "☀️" : "🌙"}
-      </ThemedText>
-    </Pressable>
-  );
+	return (
+		<TouchableOpacity
+			onPress={toggleTheme}
+			hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // Adds 10 points of slop on each side
+			style={styles.button} // Keep your existing styles like marginRight
+		>
+			<MaterialIcons name={iconName} size={24} color={iconColor} />
+		</TouchableOpacity>
+	);
+};
+
+const styles = StyleSheet.create({
+	button: {
+		// marginRight: 15,
+		// padding: -10,
+	},
+});
+
+// ./components/ThemedTextInput.tsx
+import React from "react";
+import { TextInput, StyleSheet, type TextInputProps } from "react-native";
+import { useThemeColor } from "@/hooks/useThemeColor"; // Ensure this path is correct
+
+// Extend standard TextInputProps to accept all TextInput properties
+// Add 'style' prop specifically for overriding/extending styles
+export type ThemedTextInputProps = TextInputProps & {
+	style?: object; // Allow passing custom styles
+	lightColor?: string; // Optional overrides for light theme
+	darkColor?: string; // Optional overrides for dark theme
+};
+
+export function ThemedTextInput({
+	style,
+	lightColor, // Not directly used for input background/border, but could be for text if needed
+	darkColor, // Not directly used for input background/border, but could be for text if needed
+	placeholderTextColor: customPlaceholderTextColor, // Allow overriding placeholder color specifically
+	...rest // Pass all other TextInput props down
+}: ThemedTextInputProps) {
+	// Fetch theme-specific colors using your hook
+	const color = useThemeColor({ light: lightColor, dark: darkColor }, "text");
+	const backgroundColor = useThemeColor({}, "inputBackground"); // Use the inputBackground color defined in your theme
+	const borderColor = useThemeColor({}, "inputBorder"); // Use the inputBorder color defined in your theme
+	const placeholderTextColor =
+		customPlaceholderTextColor ?? useThemeColor({}, "placeholderText"); // Use custom or theme's placeholder color
+
+	return (
+		<TextInput
+			style={[
+				styles.default, // Default styles first
+				{
+					color: color,
+					backgroundColor: backgroundColor,
+					borderColor: borderColor,
+				},
+				style, // Apply custom styles passed via props last (to override defaults)
+			]}
+			placeholderTextColor={placeholderTextColor} // Apply the determined placeholder color
+			{...rest} // Spread the rest of the TextInput props
+		/>
+	);
 }
 
 const styles = StyleSheet.create({
-  button: {
-    marginRight: 15, // Add some spacing from the edge
-    padding: 5,
-  },
+	default: {
+		height: 45, // Default height
+		borderWidth: 1, // Default border
+		borderRadius: 8, // Default corner rounding
+		paddingHorizontal: 12, // Default horizontal padding
+		fontSize: 16, // Default font size
+		marginBottom: 15, // Default bottom margin (adjust as needed)
+	},
 });
 
 // ./components/CameraComponent.tsx
@@ -1490,13 +3051,10 @@ export function StarRating({
 		}
 	};
 
-	// Calculate filled stars based on the current rating prop
 	const filledStars = rating ? Math.floor(rating) : 0;
-	// Note: We won't show half stars for user input for simplicity,
-	// but could be added if needed. Displaying previously set half stars is still possible.
-	const displayRating = rating ?? 0; // Use 0 if rating is null for calculation
+	const displayRating = rating ?? 0; 
 	const fullStars = Math.floor(displayRating);
-	const halfStar = !isInteractive && displayRating % 1 >= 0.5; // Show half stars only when displaying, not interacting
+	const halfStar = !isInteractive && displayRating % 1 >= 0.5; 
 	const emptyStars = maxStars - fullStars - (halfStar ? 1 : 0);
 
 	return (
@@ -1507,7 +3065,6 @@ export function StarRating({
 				let color = emptyStarColor;
 
 				if (rating !== null) {
-					// Only determine filled/half if there's a rating
 					if (i < fullStars) {
 						iconName = "star";
 						color = starColor;
@@ -1522,7 +3079,7 @@ export function StarRating({
 						key={i}
 						onPress={() => handlePress(i)}
 						disabled={!isInteractive}
-						style={styles.starTouchable} // Add touchable area style
+						style={styles.starTouchable} 
 					>
 						<MaterialIcons
 							name={iconName}
@@ -1531,7 +3088,7 @@ export function StarRating({
 								isInteractive && rating !== null && starValue <= rating
 									? starColor
 									: color
-							} // Ensure interactive selection shows filled stars
+							} 
 						/>
 					</TouchableOpacity>
 				);
@@ -1547,7 +3104,7 @@ const styles = StyleSheet.create({
 		marginTop: 5,
 	},
 	starTouchable: {
-		paddingHorizontal: 3, // Add some padding around stars for easier touch
+		paddingHorizontal: 3, 
 	},
 });
 

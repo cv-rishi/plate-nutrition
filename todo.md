@@ -71,7 +71,11 @@
 ### TODO
 
 - [x] Create a login screen
-- [] Create a home screen
+- [?] Create a home screen [partial, signup is not done, could be improved]
 - [x] User dashboard / camera view page, with a button to take a picture, results page, rating / satisfaction score
 - [x] Admin dashboard, with a list of food items, with options to add, edit, delete food items
-- [] Nutritionist dashboard, with a list of food items, with options to specify nutritional values of food items
+- [x] Nutritionist dashboard, with a list of food items, with options to specify nutritional values of food items
+- [x] Staff Dashboard with a list of food items, with options to take daily images of the food items (on plates, in containers, etc.) (with date, meal catagories)
+- [?] Alternate web ui for user dashboard [pariial, ui needs to look like the mobile app]
+- [] Better code structure? everything under app is not properly structured file size too big
+- 
